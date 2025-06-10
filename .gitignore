@@ -13,3 +13,6 @@ cupti_demo
 # clangd
 .cache/
 compile_commands.json
+
+# third_party
+third_party/

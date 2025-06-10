@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.15)
 # 定义项目名称和支持的语言
 project(CUPTI_Learning_Project LANGUAGES CXX CUDA)
 
+# 指定c++版本
+set(CMAKE_CXX_STANDARD 11)
+
 # 查找 CUDA 工具包
 find_package(CUDA REQUIRED)
 
@@ -26,8 +29,10 @@ set(CUPTI_LIBRARIES "${CUDA_TOOLKIT_ROOT_DIR}/extras/CUPTI/lib64/libcupti.so")
 # 如果不确定，可以设置为 "native" 让 nvcc 自动检测。
 set(CUDA_ARCHITECTURES "80") # <--- 务必根据您的 GPU 架构修改此行，例如 "75"
 
-# 添加子目录，这将处理 kernel/CMakeLists.txt 并构建 cupti_kernel_lib
+# 处理子目录
 add_subdirectory(kernel)
+add_subdirectory(third_party/spdlog)
+
 
 # 获取demo目录下所有cu文件
 file(GLOB_RECURSE DEMO_FILES demo/*.cpp)
@@ -52,6 +57,8 @@ foreach(src_file ${DEMO_FILES})
         ${CUPTI_LIBRARIES}
         # 链接 kernel 库
         cupti_kernel_lib
+        # log库
+        spdlog::spdlog
     )
 
     # 设置主程序目标的属性

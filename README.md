@@ -4,8 +4,12 @@
 
 仅做学习使用，不做任何商业用途。
 
+使用[spdlog](https://github.com/gabime/spdlog)作为日志库。
+
 使用方式
 
-编译：`bash build.sh`
+1. `git clone` 本工程，根目录下执行`git submodule update --init --recursive`更新子模块。
 
-运行：`./build/activity_kernel` ...
+2. 编译：`bash build.sh`
+
+3. 运行：`./build/activity_kernel` ...
