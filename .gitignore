@@ -1,0 +1,15 @@
+# Aider specific files
+.aider*
+
+# Build directory
+build/
+
+# Compiled executables
+cupti_demo
+
+# Object files
+*.o
+
+# clangd
+.cache/
+compile_commands.json
