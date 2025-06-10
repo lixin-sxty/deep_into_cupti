@@ -2,8 +2,6 @@
 #include <cuda_runtime.h> // CUDA 运行时 API
 #include <cupti.h>        // CUPTI API
 #include <iostream>
-#include <string>
-#include <vector>
 
 #include "kernel.h" // 包含 simple_kernel 的声明
 
@@ -38,44 +36,95 @@ void bufferAlloc(uint8_t **buffer, size_t *size, size_t *maxNumRecords) {
 void bufferComplete(CUcontext context, uint32_t streamId, uint8_t *buffer,
                     size_t size, size_t validSize) {
   CUpti_Activity *record = NULL;
+  size_t kernel_records_count = 0; // 添加核函数记录计数器
+  CUptiResult status;
+  const char *errstr;
+
   // 遍历缓冲区中的所有活动记录
+  // 循环条件改为检查 cuptiActivityGetNextRecord 的返回值
   while (true) {
-    CUPTI_CALL(cuptiActivityGetNextRecord(buffer, size, &record));
-    // 检查记录类型是否为 KERNEL
-    if (record->kind == CUPTI_ACTIVITY_KIND_KERNEL) {
-      CUpti_ActivityKernel *kernel = (CUpti_ActivityKernel *)record;
-      std::cout << "----------------------------------------" << std::endl;
-      std::cout << "Kernel Activity Record:" << std::endl;
-      std::cout << "  Name: " << kernel->name << std::endl;
-      std::cout << "  Correlation ID: " << kernel->correlationId << std::endl;
-      std::cout << "  Device ID: " << kernel->deviceId << std::endl;
-      std::cout << "  Context ID: " << kernel->contextId << std::endl;
-      std::cout << "  Stream ID: " << kernel->streamId << std::endl;
-      std::cout << "  Grid: (" << kernel->gridX << ", " << kernel->gridY << ", "
-                << kernel->gridZ << ")" << std::endl;
-      std::cout << "  Block: (" << kernel->blockX << ", " << kernel->blockY
-                << ", " << kernel->blockZ << ")" << std::endl;
-      std::cout << "  Static Shared Memory: " << kernel->staticSharedMemory
-                << " bytes" << std::endl;
-      std::cout << "  Dynamic Shared Memory: " << kernel->dynamicSharedMemory
-                << " bytes" << std::endl;
-      std::cout << "  Registers Per Thread: " << kernel->registersPerThread
-                << std::endl;
-      std::cout << "  Start Time: " << kernel->start << " ns" << std::endl;
-      std::cout << "  End Time: " << kernel->end << " ns" << std::endl;
-      std::cout << "  Duration: " << (kernel->end - kernel->start) << " ns"
-                << std::endl;
+    status = cuptiActivityGetNextRecord(buffer, validSize,
+                                        &record); // 使用 validSize
+    if (status == CUPTI_SUCCESS) {
+      // 使用 switch 语句处理不同类型的活动记录，提高可读性和可扩展性
+      switch (record->kind) {
+      case CUPTI_ACTIVITY_KIND_KERNEL: {
+        CUpti_ActivityKernel *kernel_record = (CUpti_ActivityKernel *)record;
+        std::cout << "----------------------------------------" << std::endl;
+        std::cout << "Kernel Activity Record:" << std::endl;
+        std::cout << "  Name: " << kernel_record->name << std::endl;
+        std::cout << "  Correlation ID: " << kernel_record->correlationId
+                  << std::endl;
+        std::cout << "  Device ID: " << kernel_record->deviceId << std::endl;
+        std::cout << "  Context ID: " << kernel_record->contextId << std::endl;
+        std::cout << "  Stream ID: " << kernel_record->streamId << std::endl;
+        std::cout << "  Grid: (" << kernel_record->gridX << ", "
+                  << kernel_record->gridY << ", " << kernel_record->gridZ << ")"
+                  << std::endl;
+        std::cout << "  Block: (" << kernel_record->blockX << ", "
+                  << kernel_record->blockY << ", " << kernel_record->blockZ
+                  << ")" << std::endl;
+        std::cout << "  Static Shared Memory: "
+                  << kernel_record->staticSharedMemory << " bytes" << std::endl;
+        std::cout << "  Dynamic Shared Memory: "
+                  << kernel_record->dynamicSharedMemory << " bytes"
+                  << std::endl;
+        std::cout << "  Registers Per Thread: "
+                  << kernel_record->registersPerThread << std::endl;
+        std::cout << "  Start Time: " << kernel_record->start << " ns"
+                  << std::endl;
+        std::cout << "  End Time: " << kernel_record->end << " ns" << std::endl;
+        std::cout << "  Duration: "
+                  << (kernel_record->end - kernel_record->start) << " ns"
+                  << std::endl;
+        kernel_records_count++; // 增加计数
+        break;
+      }
+      // 如果需要，可以在这里添加其他活动类型的处理，例如
+      // CUPTI_ACTIVITY_KIND_MEMCPY case CUPTI_ACTIVITY_KIND_MEMCPY: {
+      //     CUpti_ActivityMemcpy *memcpy_record = (CUpti_ActivityMemcpy
+      //     *)record; std::cout << "Memcpy Activity Record: " <<
+      //     memcpy_record->bytes << " bytes" << std::endl; break;
+      // }
+      default:
+        // 对于其他未处理的活动类型，可以选择忽略或打印通用信息
+        // cuptiGetResultString(record->kind, &errstr);
+        // std::cout << "Unhandled activity kind: " << errstr << std::endl;
+        break;
+      }
+    } else if (status == CUPTI_ERROR_MAX_LIMIT_REACHED) {
+      // 正确地退出循环：当所有记录都被处理时
+      break;
+    } else {
+      // 处理 cuptiActivityGetNextRecord 返回的其他错误
+      cuptiGetResultString(status, &errstr); // 使用 cuptiGetResultString
+      std::cerr << "CUPTI ActivityGetNextRecord Error: " << errstr << std::endl;
+      break;
     }
   }
 
   // 检查是否有被丢弃的记录
   size_t dropped;
-  CUptiResult status =
-      cuptiActivityGetNumDroppedRecords(context, streamId, &dropped);
+  // 修正 cuptiActivityGetNumDroppedRecords 的参数
+  status = cuptiActivityGetNumDroppedRecords(
+      context, streamId, &dropped); // 修正为 context 和 streamId
   if (status == CUPTI_SUCCESS && dropped > 0) {
     std::cerr << "Warning: Dropped " << dropped << " activity records!"
               << std::endl;
+  } else if (status != CUPTI_SUCCESS) { // 处理获取丢弃记录时的错误
+    cuptiGetResultString(status, &errstr);
+    std::cerr << "CUPTI GetNumDroppedRecords Error: " << errstr << std::endl;
   }
+
+  // 打印处理的活动记录总结
+  std::cout << "\n--- CUPTI Activity Buffer Summary ---" << std::endl;
+  std::cout << "Processed " << kernel_records_count
+            << " kernel activity records." << std::endl;
+  // numRecords 是 bufferComplete 回调函数的参数，表示 CUPTI 报告的记录总数
+  std::cout << "Total records in buffer (reported by CUPTI): " << validSize
+            << " bytes" << std::endl; // Changed to validSize as numRecords is
+                                      // not passed to bufferComplete
+  std::cout << "-------------------------------------\n" << std::endl;
 
   // 释放由 bufferAlloc 分配的缓冲区
   free(buffer);
@@ -115,13 +164,7 @@ int main() {
   // 4. 启动 CUDA 核函数以生成活动记录
   std::cout << "Launching simple_kernel 5 times..." << std::endl;
   for (int i = 0; i < 5; ++i) {
-    simple_kernel<<<1, 1>>>();
-    cudaStatus = cudaGetLastError();
-    if (cudaStatus != cudaSuccess) {
-      std::cerr << "Kernel launch " << i
-                << " failed: " << cudaGetErrorString(cudaStatus) << std::endl;
-      return 1;
-    }
+    kernel(100, 10);
   }
 
   // 确保所有 CUDA 操作完成，以便 CUPTI 能够收集到所有记录

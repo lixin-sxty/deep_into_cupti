@@ -3,3 +3,9 @@
 目前基于cuda 11.8 版本，重点关注activity与callback的实现方式。
 
 仅做学习使用，不做任何商业用途。
+
+使用方式
+
+编译：`bash build.sh`
+
+运行：`./build/activity_kernel` ...

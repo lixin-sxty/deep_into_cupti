@@ -30,9 +30,9 @@ set(CUDA_ARCHITECTURES "80") # <--- 务必根据您的 GPU 架构修改此行，
 add_subdirectory(kernel)
 
 # 获取demo目录下所有cu文件
-file(GLOB_RECURSE DEMO_CU_FILES demo/*.cu)
+file(GLOB_RECURSE DEMO_FILES demo/*.cpp)
 
-foreach(src_file ${DEMO_CU_FILES})
+foreach(src_file ${DEMO_FILES})
     # 获取文件名（不带路径和后缀）
     get_filename_component(src_name ${src_file} NAME_WE)
 
