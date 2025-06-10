@@ -6,8 +6,7 @@
 # 如果您的 CUDA Toolkit 安装在非标准路径，请在这里设置。
 # 例如：CUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda-11.8"
 # 如果不设置，CMake 会尝试自动查找。
-# export CUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda-11.8" # <--- 务必取消注释，并将其替换为您的实际 CUDA 安装路径！
-                                                    # 常见的路径有：/usr/local/cuda, /usr/local/cuda-X.Y, /opt/cuda/X.Y
+# export CUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda-11.8" # <--- 确保这里是您实际的 CUDA 路径，如果需要的话取消注释并设置
 
 # --- 编译过程 ---
 
@@ -21,8 +20,6 @@ cd "$BUILD_DIR" || { echo "Failed to change to build directory. Exiting."; exit 
 
 # 2. 运行 CMake 配置
 echo "Running CMake configuration..."
-# 如果您在上面设置了 CUDA_TOOLKIT_ROOT_DIR，它将自动被 CMake 使用。
-# 否则，CMake 会尝试自动查找。
 cmake ..
 
 # 检查 CMake 配置是否成功
@@ -43,14 +40,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Build completed successfully!"
-echo "You can now run the executable: ./cupti_demo"
+echo "You can now run the executable: ./cupti_activity_demo"
 
 # 返回到项目根目录 (可选，但通常是个好习惯)
 cd ..
-
-# --- 清理功能 (可选) ---
-# clean() {
-#     echo "Cleaning build directory..."
-#     rm -rf "$BUILD_DIR"
-#     echo "Cleaned."
-# }
