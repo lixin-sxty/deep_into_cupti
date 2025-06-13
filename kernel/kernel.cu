@@ -104,7 +104,7 @@ void kernel(int N, int iterations) {
   cudaMemcpy(h_C, d_C, size, cudaMemcpyDeviceToHost);
 
   // 8. 可选：输出部分结果
-  std::cout << "Result[0][0]: " << h_C[0] << std::endl;
+  // std::cout << "Result[0][0]: " << h_C[0] << std::endl;
 
   // 9. 清理资源
   cudaFree(d_A);
