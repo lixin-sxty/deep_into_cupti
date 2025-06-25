@@ -66,6 +66,8 @@ foreach(src_file ${DEMO_FILES})
     set_target_properties(${src_name} PROPERTIES
         CUDA_SEPARABLE_COMPILATION ON
         CUDA_ARCHITECTURES ${CUDA_ARCHITECTURES}
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/deep_into_cupti_demo
     )
+
 endforeach()
 
