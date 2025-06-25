@@ -72,7 +72,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Build completed successfully!"
-echo "You can now run the executable: .build/cupti_activity_demo"
+echo "You can now run the executable: .build/xxx"
 
 # 返回到项目根目录 (可选，但通常是个好习惯)
 cd ..

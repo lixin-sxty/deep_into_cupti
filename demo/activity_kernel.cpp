@@ -11,17 +11,7 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
-// CUPTI 错误检查宏
-#define CUPTI_CALL(call)                                                       \
-  do {                                                                         \
-    CUptiResult _status = call;                                                \
-    if (_status != CUPTI_SUCCESS) {                                            \
-      const char *errstr;                                                      \
-      cuptiGetResultString(_status, &errstr);                                  \
-      SPDLOG_ERROR("CUPTI Error: {} in {}:{}", errstr, __FILE__, __LINE__);    \
-      exit(EXIT_FAILURE);                                                      \
-    }                                                                          \
-  } while (0)
+#include "utils/utils.h"
 
 // CUPTI 活动记录缓冲区分配回调函数
 void bufferAlloc(uint8_t **buffer, size_t *size, size_t *maxNumRecords) {
@@ -124,50 +114,38 @@ int main() {
   logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P:%t] [%s@%!:%#] %^[%L]%$ %v");
 
   SPDLOG_INFO("Starting CUPTI Kernel Activity Demo...");
-  SPDLOG_INFO("Starting CUPTI Kernel Activity Demo...");
 
   int deviceCount;
-  cudaError_t cudaStatus = cudaGetDeviceCount(&deviceCount);
-  if (cudaStatus != cudaSuccess) {
-    SPDLOG_ERROR("cudaGetDeviceCount failed: {}",
-                 cudaGetErrorString(cudaStatus));
-    return 1;
-  }
+  CUDA_CALL(cudaGetDeviceCount(&deviceCount));
   if (deviceCount == 0) {
     SPDLOG_ERROR("No CUDA devices found.");
     return 1;
   }
-  cudaStatus = cudaSetDevice(0);
-  if (cudaStatus != cudaSuccess) {
-    SPDLOG_ERROR("cudaSetDevice failed: {}", cudaGetErrorString(cudaStatus));
-    return 1;
-  }
+  CUDA_CALL(cudaSetDevice(0));
   SPDLOG_INFO("Set CUDA device to 0.");
 
   CUPTI_CALL(cuptiActivityRegisterCallbacks(bufferAlloc, bufferComplete));
 
   CUPTI_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_KERNEL));
   SPDLOG_INFO("CUPTI Kernel Activity collection enabled.");
-  sleep(5);
+  const int sleep_seconds = 5;
+  SPDLOG_INFO("Sleep {} seconds...", sleep_seconds);
+  sleep(sleep_seconds);
 
-  const int launch_times = 5;
+  const int launch_times = 20;
   SPDLOG_INFO("Launching simple_kernel {} times...", launch_times);
   for (int i = 0; i < launch_times; ++i) {
     kernel(100, 10);
   }
 
-  cudaStatus = cudaDeviceSynchronize();
-  if (cudaStatus != cudaSuccess) {
-    SPDLOG_ERROR("cudaDeviceSynchronize failed: {}",
-                 cudaGetErrorString(cudaStatus));
-    return 1;
-  }
+  CUDA_CALL(cudaDeviceSynchronize());
   SPDLOG_INFO("All kernels launched and synchronized.");
 
   CUPTI_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_KERNEL));
   SPDLOG_INFO("CUPTI Kernel Activity collection disabled.");
 
-  sleep(5);
+  SPDLOG_INFO("Sleep {} seconds...", sleep_seconds);
+  sleep(sleep_seconds);
   SPDLOG_INFO("Flushing remaining CUPTI activity records...");
   CUPTI_CALL(cuptiActivityFlushAll(0));
 

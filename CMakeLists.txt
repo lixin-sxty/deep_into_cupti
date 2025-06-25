@@ -48,6 +48,7 @@ foreach(src_file ${DEMO_FILES})
     target_include_directories(${src_name} PRIVATE
         ${CUDA_INCLUDE_DIRS}
         ${CUPTI_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
     # 链接所需的库
@@ -67,5 +68,4 @@ foreach(src_file ${DEMO_FILES})
         CUDA_ARCHITECTURES ${CUDA_ARCHITECTURES}
     )
 endforeach()
-
 
