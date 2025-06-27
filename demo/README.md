@@ -5,3 +5,6 @@
    * buffer request在主线程中调用，buffer complete在其他线程中调用。
    * 使能cuptiActivityEnable时不会创建context，不占用显存
 
+2. cuptiSubscribe
+   * 同一时刻只能有一个订阅者
+   * 支持回调函数为NULL
