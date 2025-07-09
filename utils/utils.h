@@ -1,7 +1,7 @@
 #ifndef UTILS_UTILS_H
 #define UTILS_UTILS_H
 
-#include <spdlog/spdlog.h> // 用于 SPDLOG_ERROR
+#include "spdlog_utils.h"
 #include <cuda_runtime.h>   // 用于 cudaError_t, cudaSuccess, cudaGetErrorString
 #include <cupti.h>          // 用于 CUptiResult, CUPTI_SUCCESS, cuptiGetResultString
 #include <cstdlib>          // 用于 exit

@@ -6,24 +6,18 @@
 
 #include "kernel.h" // 包含 simple_kernel 的声明
 
-// spdlog 头文件
-#include "spdlog/cfg/env.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
-
 #include "utils/utils.h"
 
 // CUPTI 活动记录缓冲区分配回调函数
 void bufferAlloc(uint8_t **buffer, size_t *size, size_t *maxNumRecords) {
   SPDLOG_INFO("CUPTI allocate buffer.");
-  // *size = 1024 * 1024; // 1MB
-  *size = 1024; // 1MB
+  *size = 1024 * 1024; // 1MB
   *buffer = (uint8_t *)malloc(*size);
   if (!*buffer) {
     SPDLOG_ERROR("Failed to allocate CUPTI activity buffer.");
     exit(EXIT_FAILURE);
   }
-  *maxNumRecords = 0;
+  *maxNumRecords = 5;
 }
 
 // CUPTI 活动记录缓冲区释放和处理回调函数
@@ -98,21 +92,8 @@ void bufferComplete(CUcontext context, uint32_t streamId, uint8_t *buffer,
 
   free(buffer);
 }
-
 int main() {
-  // 创建一个stdout color sink（如果你不需要颜色输出，可以使用其他sink）
-  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-
-  // 创建logger并注册
-  auto logger =
-      std::make_shared<spdlog::logger>("logger_with_thread_id", console_sink);
-  spdlog::register_logger(logger);
-  spdlog::set_default_logger(logger);
-
-  spdlog::cfg::load_env_levels(); // 读取环境变量中的日志级别
-
-  // 设置日志格式，%t 代表线程ID
-  logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P:%t] [%s@%!:%#] %^[%L]%$ %v");
+  init_spdlog();
 
   SPDLOG_INFO("Starting CUPTI Kernel Activity Demo...");
 
@@ -129,7 +110,7 @@ int main() {
 
   CUPTI_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL));
   SPDLOG_INFO("CUPTI Kernel Activity collection enabled.");
-  const int sleep_seconds = 50;
+  const int sleep_seconds = 5;
   SPDLOG_INFO("Sleep {} seconds...", sleep_seconds);
   sleep(sleep_seconds);
 

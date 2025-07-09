@@ -4,12 +4,8 @@
 #include <iostream>       // 暂时保留，但实际输出将由 spdlog 接管
 #include <unistd.h>
 
+#include "cupti_activity.h"
 #include "kernel.h" // 包含 simple_kernel 的声明
-
-// spdlog 头文件
-#include "spdlog/cfg/env.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
 
 #include "utils/utils.h"
 
@@ -99,20 +95,8 @@ void bufferComplete(CUcontext context, uint32_t streamId, uint8_t *buffer,
 }
 
 int main() {
-  // 创建一个stdout color sink（如果你不需要颜色输出，可以使用其他sink）
-  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
-  // 创建logger并注册
-  auto logger =
-      std::make_shared<spdlog::logger>("logger_with_thread_id", console_sink);
-  spdlog::register_logger(logger);
-  spdlog::set_default_logger(logger);
-
-  spdlog::cfg::load_env_levels(); // 读取环境变量中的日志级别
-
-  // 设置日志格式，%t 代表线程ID
-  logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P:%t] [%s@%!:%#] %^[%L]%$ %v");
-
+  init_spdlog();
   SPDLOG_INFO("Starting CUPTI Kernel Activity Demo...");
 
   int deviceCount;
@@ -138,6 +122,13 @@ int main() {
     kernel(100, 10);
   }
 
+  CUDA_CALL(cudaSetDevice(1));
+  SPDLOG_INFO("Set CUDA device to 1.");
+  SPDLOG_INFO("Launching simple_kernel {} times...", launch_times);
+  for (int i = 0; i < launch_times; ++i) {
+    kernel(100, 10);
+  }
+
   CUDA_CALL(cudaDeviceSynchronize());
   SPDLOG_INFO("All kernels launched and synchronized.");
 
@@ -146,8 +137,8 @@ int main() {
 
   SPDLOG_INFO("Sleep {} seconds...", sleep_seconds);
   sleep(sleep_seconds);
-  SPDLOG_INFO("Flushing remaining CUPTI activity records...");
-  CUPTI_CALL(cuptiActivityFlushAll(0));
+  // SPDLOG_INFO("Flushing remaining CUPTI activity records...");
+  // CUPTI_CALL(cuptiActivityFlushAll(0));
 
   SPDLOG_INFO("CUPTI Kernel Activity Demo finished successfully.");
 

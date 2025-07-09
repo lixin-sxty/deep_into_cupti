@@ -24,6 +24,8 @@ add_custom_target(copy_compile_commands ALL
 set(CUPTI_INCLUDE_DIRS "${CUDA_TOOLKIT_ROOT_DIR}/extras/CUPTI/include")
 set(CUPTI_LIBRARIES "${CUDA_TOOLKIT_ROOT_DIR}/extras/CUPTI/lib64/libcupti.so")
 
+# include_directories(${CMAKE_SOURCE_DIR})
+
 # 设置 CUDA 编译架构
 # 务必根据您的 GPU 架构修改此行，例如 "75" (Turing), "86" (Ampere) 等。
 # 如果不确定，可以设置为 "native" 让 nvcc 自动检测。
@@ -32,6 +34,7 @@ set(CUDA_ARCHITECTURES "80") # <--- 务必根据您的 GPU 架构修改此行，
 # 处理子目录
 add_subdirectory(kernel)
 add_subdirectory(third_party/spdlog)
+add_subdirectory(utils)
 
 
 # 获取demo目录下所有cu文件
@@ -58,8 +61,8 @@ foreach(src_file ${DEMO_FILES})
         ${CUPTI_LIBRARIES}
         # 链接 kernel 库
         cupti_kernel_lib
-        # log库
-        spdlog::spdlog
+        # 链接 utils
+        utils
     )
 
     # 设置主程序目标的属性
